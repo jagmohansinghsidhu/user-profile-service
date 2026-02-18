@@ -5,8 +5,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - DB_USER=lb
       - DB_PASSWORD=password
@@ -31,20 +33,33 @@ services:
       - "3306:3306"
     volumes:
       - lb_db:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "--silent" ]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
   redis:
     image: redis:8.0-alpine
     container_name: redis_cache
     ports:
       - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   tests:
     build: .
     container_name: lb-user-profile-tests
     restart: no
     depends_on:
-      - test_db
-      - redis
+      test_db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - DB_USER=lb_test
       - DB_PASSWORD=password
@@ -63,6 +78,12 @@ services:
       - MYSQL_DATABASE=lb_db_test
       - MYSQL_USER=lb_test
       - MYSQL_PASSWORD=password
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "--silent" ]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
 volumes:
   lb_db:
