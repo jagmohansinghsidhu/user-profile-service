@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lb-user-profile-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: lb-user-profile
+        ports:
+        - containerPort: 8000
+        env:
+        - name: REDIS_HOST
+          value: "host.docker.internal"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_DB
+          value: "0"
+        - name: DB_USER
+          value: "lb"
+        - name: DB_PASSWORD
+          value: "password"
+        - name: DB_HOST
+          value: "host.docker.internal:3306"
+        - name: DB_NAME
+          value: "lb_db"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
