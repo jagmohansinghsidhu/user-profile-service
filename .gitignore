@@ -1,0 +1,5 @@
+__pycache__/*
+*.pyc
+.idea/*
+migrations/versions/*.pyc
+alembic.ini

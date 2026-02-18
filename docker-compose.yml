@@ -1,0 +1,68 @@
+services:
+  api:
+    build: .
+    container_name: lb-user-profile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DB_USER=lb
+      - DB_PASSWORD=password
+      - DB_HOST=user-profiles-db:3306
+      - DB_NAME=lb_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+
+    volumes:
+      - .:/app
+
+  db:
+    image: mysql:8.0
+    container_name: user-profiles-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=lb_db
+      - MYSQL_USER=lb
+      - MYSQL_PASSWORD=password
+    ports:
+      - "3306:3306"
+    volumes:
+      - lb_db:/var/lib/mysql
+
+  redis:
+    image: redis:8.0-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+
+  tests:
+    build: .
+    container_name: lb-user-profile-tests
+    restart: no
+    depends_on:
+      - test_db
+      - redis
+    environment:
+      - DB_USER=lb_test
+      - DB_PASSWORD=password
+      - DB_HOST=user-profiles-db-test:3306
+      - DB_NAME=lb_db_test
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=1
+    command: ["pytest", "tests/", "--verbose"]
+
+  test_db:
+    image: mysql:8.0
+    container_name: user-profiles-db-test
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=lb_db_test
+      - MYSQL_USER=lb_test
+      - MYSQL_PASSWORD=password
+
+volumes:
+  lb_db:
